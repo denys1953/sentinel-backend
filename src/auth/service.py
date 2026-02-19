@@ -7,14 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 
-async def get_user_by_email(db: AsyncSession, email: str) -> models.User | None:
-    query = select(models.User).where(models.User.email == email)
+async def get_user_by_username(db: AsyncSession, username: str) -> models.User | None:
+    query = select(models.User).where(models.User.username == username)
     result = await db.execute(query)
     return result.scalar_one_or_none()
 
 
 async def create_new_user(db: AsyncSession, user_data: UserCreate) -> models.User:
-    query = select(models.User).where(models.User.email == user_data.email)
+    query = select(models.User).where(models.User.username == user_data.username)
     result = await db.execute(query)
     existing_user = result.scalar_one_or_none()
 
@@ -25,7 +25,11 @@ async def create_new_user(db: AsyncSession, user_data: UserCreate) -> models.Use
         )
 
     new_user = models.User(
-        email=user_data.email, hashed_password=hash_password(user_data.password)
+        username=user_data.username,
+        hashed_password=hash_password(user_data.password),
+        public_key=user_data.public_key,
+        enc_private_key=user_data.enc_private_key,
+        salt=user_data.salt
     )
 
     db.add(new_user)
@@ -37,7 +41,7 @@ async def create_new_user(db: AsyncSession, user_data: UserCreate) -> models.Use
 async def authenticate_user(
     db: AsyncSession, email: str, password: str
 ) -> Token | None:
-    user = await get_user_by_email(db, email)
+    user = await get_user_by_username(db, email)
 
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(

@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Optional
 from urllib.parse import quote_plus
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
