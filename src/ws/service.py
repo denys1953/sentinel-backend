@@ -7,18 +7,18 @@ class ChatService:
     def __init__(self, manager: WebSocketManager):
         self.manager = manager
 
-    async def process_message(self, sender_id: int, raw_data: dict):
+    async def process_message(self, fingerprint: str, raw_data: dict):
         try:
             incoming = MessageIncoming.model_validate(raw_data)
 
             response = MessageOutgoing(
-                sender_id=sender_id,
+                sender_fp=fingerprint,
                 content=incoming.content
             )
 
             success = await self.manager.send_personal_message(
                 response.model_dump(mode="json"), 
-                incoming.receiver_id
+                incoming.receiver_fp
             )
 
             if not success:
@@ -28,5 +28,5 @@ class ChatService:
             error = ErrorResponse(detail=str(e))
             await self.manager.send_personal_message(
                 error.model_dump(mode="json"), 
-                sender_id
+                fingerprint
             )

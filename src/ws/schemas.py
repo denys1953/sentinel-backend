@@ -3,12 +3,12 @@ from datetime import datetime
 from typing import Literal
 
 class MessageIncoming(BaseModel):
-    receiver_id: int
+    receiver_fp: str
     content: str
 
 class MessageOutgoing(BaseModel):
     type: Literal["chat_message"] = "chat_message"
-    sender_id: int
+    sender_fp: str
     content: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
