@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.auth.router import router as auth_router
 from src.ws.router import router as ws_router
 from src.users.router import router as users_router
+from src.conversations.router import router as conversations_router
 
 swagger_params = {"persistAuthorization": True}
 
@@ -29,4 +30,5 @@ async def main():
 
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(users_router, prefix="/users", tags=["Users"])
+app.include_router(conversations_router, prefix="/conversations", tags=["Conversations"])
 app.include_router(ws_router, tags=["WebSockets"])

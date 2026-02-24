@@ -14,6 +14,16 @@ async def get_user_by_username(db: AsyncSession, username: str) -> models.User |
     result = await db.execute(query)
     return result.scalar_one_or_none()
 
+async def get_user_by_id(db: AsyncSession, user_id: int) -> models.User | None:
+    query = select(models.User).where(models.User.id == user_id)
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
+
+async def get_user_by_fingerprint(db: AsyncSession, fingerprint: str) -> models.User | None:
+    query = select(models.User).where(models.User.fingerprint == fingerprint)
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
+
 
 async def create_new_user(db: AsyncSession, user_data: UserCreate) -> models.User:
     query = select(models.User).where(models.User.username == user_data.username)
