@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
 
+    ALLOWED_ORIGINS: str = "*"
+
     @property
     def database_url(self) -> str:
         password = quote_plus(self.POSTGRES_PASSWORD) if self.POSTGRES_PASSWORD else ""
