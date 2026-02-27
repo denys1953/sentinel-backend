@@ -3,14 +3,14 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 
 from src.auth.dependencies import get_current_user
-from src.users.schemas import UserPublic
+from src.users.schemas import UserPublic, UserRead
 from src.core.database import get_db, AsyncSession
 from src.users.service import search_users_by_username
 
 router = APIRouter(tags=["Users"])
 
-@router.get("/me", response_model=UserPublic)
-async def read_current_user(current_user: UserPublic = Depends(get_current_user)):
+@router.get("/me", response_model=UserRead)
+async def read_current_user(current_user: UserRead = Depends(get_current_user)):
     return current_user
 
 

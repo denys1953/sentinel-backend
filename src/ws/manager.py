@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 class WebSocketManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
+        self.user_current_chat: Dict[str, int] = {}
     
     async def connect(self, fingerprint: str, websocket: WebSocket):
         await websocket.accept()
@@ -32,3 +33,8 @@ class WebSocketManager:
             await connection.send_json(message)
         logger.info(f"Broadcasted message to all users: {message}")
 
+    async def set_current_chat(self, fingerprint: str, conv_id: int | None):
+        if conv_id:
+            self.user_current_chat[fingerprint] = conv_id
+        else:
+            self.user_current_chat.pop(fingerprint, None)

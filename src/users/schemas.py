@@ -19,6 +19,7 @@ class UserRead(UserBase):
     public_key: Optional[str] = None
     enc_private_key: Optional[str] = None
     salt: Optional[str] = None
+    fingerprint: Optional[str] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime

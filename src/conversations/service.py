@@ -2,6 +2,7 @@ from src.conversations.schemas import MessageCreate
 from src.core.database import AsyncSession
 from src.conversations.models import ConversationType, Message, Conversation, ConversationParticipant
 from src.users.models import User
+from src.ws.manager import WebSocketManager
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import selectinload
@@ -40,10 +41,52 @@ async def get_or_create_conversation(
         await db.rollback()
         raise e
     
+async def increment_unread_counters(db: AsyncSession, conversation_id: int, sender_id: int, manager: WebSocketManager):
+    recipients = await get_all_recipients(db=db, conversation_id=conversation_id, sender_id=sender_id)
+
+    users_to_increment = []
+    for r in recipients:
+        is_viewing_now = manager.user_current_chat.get(r.fingerprint) == conversation_id
+        if not is_viewing_now:
+            users_to_increment.append(r.id)
+
+    if users_to_increment:
+        stmt = (
+            update(ConversationParticipant)
+            .where(
+                ConversationParticipant.conversation_id == conversation_id,
+                ConversationParticipant.user_id.in_(users_to_increment)
+            )
+            .values(unread_count=ConversationParticipant.unread_count + 1)
+        )
+        await db.execute(stmt)
+        await db.commit()
+
+async def reset_unread_counters(db: AsyncSession, conversation_id: int, fingerprint: str):
+    user_id_subquery = (
+        select(User.id)
+        .where(User.fingerprint == fingerprint)
+        .scalar_subquery()
+    )
+
+    
+    stmt = (
+        update(ConversationParticipant)
+        .where(
+            ConversationParticipant.conversation_id == conversation_id,
+            ConversationParticipant.user_id == user_id_subquery
+        )
+        .values(unread_count=0)
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+        
 async def handle_new_incoming_message(
     db: AsyncSession,
     sender_id: int,
-    message_data: MessageCreate
+    message_data: MessageCreate,
+    manager: WebSocketManager
 ):
     conv_id = message_data.conversation_id
 
@@ -57,6 +100,8 @@ async def handle_new_incoming_message(
         user_id=sender_id,
         message_data=message_data
     )
+
+    await increment_unread_counters(db, conv_id, sender_id, manager)
 
     recipients = await get_all_recipients(db, conv_id, sender_id)
 
