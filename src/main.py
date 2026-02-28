@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from src.auth.router import router as auth_router
 from src.ws.router import router as ws_router
@@ -14,6 +15,8 @@ origins = [
     "http://localhost:5173", 
     "http://127.0.0.1:5173",
 ]
+
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 app.add_middleware(
     CORSMiddleware,
