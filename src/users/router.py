@@ -14,7 +14,7 @@ async def read_current_user(current_user: UserRead = Depends(get_current_user)):
     return current_user
 
 
-@router.get("", response_model=list[UserPublic])
+@router.get("/", response_model=list[UserPublic])
 async def search_users(
     search: Optional[str] = Query(None, min_length=2, alias="search"),
     limit: int = Query(10, ge=1, le=100),
