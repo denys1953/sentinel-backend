@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    # Redis
+    REDIS_URL: str = ""
+
     # Postgres
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = ""
