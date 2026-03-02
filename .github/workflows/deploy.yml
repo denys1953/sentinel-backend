@@ -14,8 +14,8 @@ jobs:
           git pull origin main          
           cd ..
 
-          docker-compose up -d --build fastapi
-          docker-compose exec -T fastapi uv run alembic upgrade head
+          docker compose up -d --build fastapi
+          docker compose exec -T fastapi uv run alembic upgrade head
           
       - name: Cleanup
         run: docker image prune -f
