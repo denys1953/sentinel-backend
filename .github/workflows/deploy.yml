@@ -14,7 +14,7 @@ jobs:
           git pull origin main          
           cd ..
 
-          docker compose up -d --build fastapi
+          docker-compose up -d --build fastapi
           
       - name: Cleanup
         run: docker image prune -f
