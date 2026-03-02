@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Update code and rebuild
         run: |
-          cd /home/ubuntu/sentinel-app/backend
+          cd /home/ubuntu/sentinel-app/sentinel-backend
           git pull origin main          
           cd ..
 
