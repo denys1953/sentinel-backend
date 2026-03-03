@@ -6,6 +6,7 @@ from src.ws.manager import WebSocketManager
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import selectinload
+from datetime import datetime, timezone
 
 
 async def get_or_create_conversation(
@@ -147,7 +148,7 @@ async def get_messages_by_conversation(
     query = (
         select(Message)
         .where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at.asc())
+        .order_by(Message.created_at.desc())
         .limit(limit)
         .offset(offset)
     )
@@ -193,8 +194,8 @@ async def get_user_conversations(
         .join(Conversation.participants)
         .where(
             ConversationParticipant.user_id == user_id,
-            
         )
+        .order_by(Conversation.updated_at.desc())
     )
     result = await db.execute(query)
     return result.scalars().all()
