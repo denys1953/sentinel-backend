@@ -15,20 +15,45 @@ class WebSocketManager:
     
     async def connect(self, fingerprint: str, websocket: WebSocket):
         await websocket.accept()
+
         self.active_connections[fingerprint] = websocket
         task = asyncio.create_task(self._redis_listener(fingerprint))
         self.redis_tasks[fingerprint] = task
+
+        await redis_client.set(f"online:{fingerprint}", "1", ex=60)
+        heartbeat_task = asyncio.create_task(self._heartbeat(fingerprint))
+        self.redis_tasks[f"heartbeat_{fingerprint}"] = heartbeat_task
+
         logger.info(f"User {fingerprint} connected to WebSocket.")
     
-    def disconnect(self, fingerprint: str):
+    async def disconnect(self, fingerprint: str):
         if fingerprint in self.active_connections:
             self.active_connections.pop(fingerprint, None)
             self.user_current_chat.pop(fingerprint, None)
 
-            task = self.redis_tasks.pop(fingerprint, None)
-            if task:
-                task.cancel()
+            listener_task = self.redis_tasks.pop(fingerprint, None)
+            if listener_task:
+                listener_task.cancel()
+
+            heartbeat_task = self.redis_tasks.pop(f"heartbeat_{fingerprint}", None)
+            if heartbeat_task:
+                heartbeat_task.cancel()
+
             logger.info(f"User {fingerprint} disconnected from WebSocket.")
+
+            try:
+                await redis_client.delete(f"online:{fingerprint}")
+            except Exception as e:
+                logger.error(f"Error deleting online status for {fingerprint}: {e}")
+
+    async def _heartbeat(self, fingerprint: str):
+        try:
+            while True:
+                await redis_client.set(f"online:{fingerprint}", "1", ex=60)
+                await asyncio.sleep(30)
+
+        except asyncio.CancelledError:
+            await redis_client.delete(f"online:{fingerprint}")
 
     async def _redis_listener(self, fingerprint: str):
         pubsub = redis_client.pubsub()

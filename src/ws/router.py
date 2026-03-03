@@ -20,4 +20,4 @@ async def chat_gateway(
             await chat_service.process_message(fingerprint, data)
 
     except WebSocketDisconnect:
-        manager.disconnect(fingerprint)
+        await manager.disconnect(fingerprint)
