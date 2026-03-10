@@ -16,6 +16,7 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     id: int
+    avatar_url: Optional[str] = None
     public_key: Optional[str] = None
     enc_private_key: Optional[str] = None
     salt: Optional[str] = None
@@ -29,6 +30,7 @@ class UserRead(UserBase):
 class UserPublic(UserBase):
     id: int
     username: str
+    avatar_url: Optional[str] = None 
     public_key: Optional[str] = None
     fingerprint: Optional[str] = None
 

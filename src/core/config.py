@@ -34,6 +34,13 @@ class Settings(BaseSettings):
 
     ALLOWED_ORIGINS: str = "*"
 
+    # AWS S3
+    AWS_ACCESS_KEY: str = ""
+    AWS_SECRET_KEY: str = ""
+    AWS_REGION: str = "eu-central-1"
+    AWS_S3_BUCKET_NAME: str = ""
+
+
     @property
     def database_url(self) -> str:
         password = quote_plus(self.POSTGRES_PASSWORD) if self.POSTGRES_PASSWORD else ""
