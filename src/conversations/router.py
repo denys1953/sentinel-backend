@@ -1,7 +1,7 @@
 from typing import List
 
 from src.core.database import AsyncSession, get_db
-from src.conversations.schemas import MessageCreate, MessageRead, ConversationRead
+from src.conversations.schemas import MessageCreate, MessageRead, ConversationRead, MessageUpdate
 from src.auth.dependencies import get_current_user
 from src.conversations.service import create_message, get_messages_by_conversation, get_or_create_conversation, check_participation, get_user_conversations
 from src.auth.service import get_user_by_id
@@ -54,3 +54,41 @@ async def get_history(
 ):
     return await get_messages_by_conversation(db, conversation_id, limit, offset)
 
+@router.delete("/messages/{message_id}")
+async def delete_msg(
+    message_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from src.conversations.service import delete_message
+    from src.ws.dependencies import get_manager
+    manager = get_manager()
+    success = await delete_message(db, message_id, current_user.id, manager)
+    if not success:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this message or message not found")
+    return {"status": "success"}
+
+@router.patch("/messages/{message_id}", response_model=MessageRead)
+async def update_msg(
+    message_id: int,
+    message_update: MessageUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from src.conversations.service import edit_message
+    from src.ws.dependencies import get_manager
+    manager = get_manager()
+    
+    updated_message = await edit_message(
+        db, 
+        message_id, 
+        current_user.id, 
+        message_update.content_encoded, 
+        message_update.content_self, 
+        manager
+    )
+    
+    if not updated_message:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this message or message not found")
+        
+    return updated_message

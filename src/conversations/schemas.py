@@ -45,14 +45,20 @@ class MessageBase(BaseModel):
     recipient_id: Optional[int] = None
     content_encoded: str
     content_self: str
+    reply_to_id: Optional[int] = None
 
 class MessageRead(BaseWithID, MessageBase):
     sender_id: int
     created_at: datetime
     updated_at: datetime
+    is_edited: bool
 
     model_config = ConfigDict(from_attributes=True)
 
 class MessageCreate(MessageBase):
     pass
+
+class MessageUpdate(BaseModel):
+    content_encoded: str
+    content_self: str
     

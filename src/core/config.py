@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ALGORITHM: str = "HS256"
 
+    DATABASE_URL: str = ""
+
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000

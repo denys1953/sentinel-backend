@@ -15,6 +15,7 @@ class MessageOutgoing(BaseModel):
     conversation_id: int
     content: str
     timestamp: datetime
+    reply_to_id: int | None = None
 
 class ErrorResponse(BaseModel):
     type: Literal["error"] = "error"

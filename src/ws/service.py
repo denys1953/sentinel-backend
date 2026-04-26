@@ -44,8 +44,19 @@ class ChatService:
                     conversation_id=new_message.conversation_id,
                     sender_fp=fingerprint,
                     content=incoming.content_encoded,
-                    timestamp=new_message.created_at
+                    timestamp=new_message.created_at,
+                    reply_to_id=new_message.reply_to_id
                 )
+
+                sender_response = MessageOutgoing(
+                    id=new_message.id,
+                    conversation_id=new_message.conversation_id,
+                    sender_fp=fingerprint,
+                    content=incoming.content_self,
+                    timestamp=new_message.created_at,
+                    reply_to_id=new_message.reply_to_id
+                )
+                await self.manager.send_personal_message(sender_response.model_dump(mode="json"), fingerprint)
 
                 payload = response.model_dump(mode="json")
                 for r in recipients:

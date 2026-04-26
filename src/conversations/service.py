@@ -119,7 +119,8 @@ async def create_message(
         conversation_id=conversation_id,
         sender_id=user_id,
         content_encoded=message_data.content_encoded,
-        content_self=message_data.content_self
+        content_self=message_data.content_self,
+        reply_to_id=message_data.reply_to_id
     )
 
     db.add(new_message)
@@ -199,3 +200,87 @@ async def get_user_conversations(
     )
     result = await db.execute(query)
     return result.scalars().all()
+
+async def delete_message(
+    db: AsyncSession,
+    message_id: int,
+    user_id: int,
+    manager: WebSocketManager
+) -> bool:
+    query = select(Message).where(Message.id == message_id)
+    result = await db.execute(query)
+    message = result.scalar_one_or_none()
+    
+    if not message:
+        return False
+        
+    if message.sender_id != user_id:
+        return False
+        
+    conversation_id = message.conversation_id
+    await db.delete(message)
+    await db.commit()
+    
+    recipients = await get_all_recipients(db, conversation_id, user_id)
+    event_data = {
+        "type": "delete_message",
+        "message_id": message_id,
+        "conversation_id": conversation_id
+    }
+    
+    for r in recipients:
+        await manager.send_personal_message(event_data, r.fingerprint)
+        
+    return True
+
+async def edit_message(
+    db: AsyncSession,
+    message_id: int,
+    user_id: int,
+    content_encoded: str,
+    content_self: str,
+    manager: WebSocketManager
+):
+    query = select(Message).where(Message.id == message_id)
+    result = await db.execute(query)
+    message = result.scalar_one_or_none()
+    
+    if not message or message.sender_id != user_id:
+        return None
+        
+    message.content_encoded = content_encoded
+    message.content_self = content_self
+    message.is_edited = True
+    
+    await db.commit()
+    await db.refresh(message)
+    
+    # Notify recipients
+    recipients = await get_all_recipients(db, message.conversation_id, user_id)
+    event_data = {
+        "type": "edit_message",
+        "message": {
+            "id": message.id,
+            "conversation_id": message.conversation_id,
+            "sender_id": message.sender_id,
+            "content_encoded": message.content_encoded,
+            "content_self": message.content_self,
+            "created_at": message.created_at.isoformat(),
+            "updated_at": message.updated_at.isoformat(),
+            "is_edited": message.is_edited
+        }
+    }
+    
+    for r in recipients:
+        await manager.send_personal_message(event_data, r.fingerprint)
+        
+    # Also notify sender to resolve any optimistic UI or if they have multiple devices
+    from src.users.models import User
+    sender_query = select(User.fingerprint).where(User.id == user_id)
+    sender_result = await db.execute(sender_query)
+    sender_fp = sender_result.scalar_one_or_none()
+    
+    if sender_fp:
+        await manager.send_personal_message(event_data, sender_fp)
+        
+    return message

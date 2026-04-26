@@ -51,6 +51,9 @@ class Message(Base):
     content_encoded: Mapped[str] = mapped_column(Text)
     content_self: Mapped[str] = mapped_column(Text)
     
+    is_edited: Mapped[bool] = mapped_column(default=False)
+    reply_to_id: Mapped[int] = mapped_column(ForeignKey("messages.id", ondelete="SET NULL"), nullable=True)
+    
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
