@@ -4,8 +4,13 @@ from src.core.database import AsyncSession, get_db
 from src.conversations.schemas import MessageCreate, MessageRead, ConversationRead, MessageUpdate
 from src.auth.dependencies import get_current_user
 from src.conversations.service import create_message, get_messages_by_conversation, get_or_create_conversation, check_participation, get_user_conversations
+from src.conversations.service import get_message_by_id, check_participation
 from src.auth.service import get_user_by_id
 from src.users.models import User
+from src.conversations.service import delete_message
+from src.ws.dependencies import get_manager
+from src.conversations.service import edit_message
+from src.ws.dependencies import get_manager
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -54,14 +59,28 @@ async def get_history(
 ):
     return await get_messages_by_conversation(db, conversation_id, limit, offset)
 
+@router.get("/messages/{message_id}", response_model=MessageRead)
+async def get_single_message(
+    message_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    message = await get_message_by_id(db, message_id)
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+        
+    is_participant = await check_participation(db, message.conversation_id, current_user.id)
+    if not is_participant:
+        raise HTTPException(status_code=403, detail="Not authorized to view this message")
+        
+    return message
+
 @router.delete("/messages/{message_id}")
 async def delete_msg(
     message_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    from src.conversations.service import delete_message
-    from src.ws.dependencies import get_manager
     manager = get_manager()
     success = await delete_message(db, message_id, current_user.id, manager)
     if not success:
@@ -75,8 +94,6 @@ async def update_msg(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    from src.conversations.service import edit_message
-    from src.ws.dependencies import get_manager
     manager = get_manager()
     
     updated_message = await edit_message(

@@ -61,5 +61,36 @@ async def authenticate_user(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password"
         )
 
-    token = create_access_token(data={"sub": str(user.username)})
-    return Token(access_token=token)
+    if user.is_2fa_enabled:
+        temp_token = create_access_token(data={"sub": str(user.username), "type": "2fa_temp"})
+        return Token(requires_2fa=True, temp_token=temp_token)
+    
+    # 2FA is mandatory. If not enabled, force setup on login
+    import pyotp
+    import qrcode
+    import io
+    import base64
+
+    # Generate a new TOTP secret if not present
+    if not user.totp_secret:
+        user.totp_secret = pyotp.random_base32()
+        db.add(user)
+        await db.commit()
+
+    uri = pyotp.totp.TOTP(user.totp_secret).provisioning_uri(
+        name=user.username,
+        issuer_name="SentinelApp"
+    )
+    qr = qrcode.make(uri)
+    img_byte_arr = io.BytesIO()
+    qr.save(img_byte_arr, format='PNG')
+    img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode()
+
+    temp_token = create_access_token(data={"sub": str(user.username), "type": "2fa_temp"})
+    return Token(
+        requires_2fa=True, 
+        temp_token=temp_token, 
+        setup_required=True,
+        qr_code=f"data:image/png;base64,{img_base64}",
+        secret=user.totp_secret
+    )

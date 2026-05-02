@@ -157,6 +157,11 @@ async def get_messages_by_conversation(
     result = await db.execute(query)
     return result.scalars().all()
 
+async def get_message_by_id(db: AsyncSession, message_id: int):
+    query = select(Message).where(Message.id == message_id)
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
+
 async def check_participation(
     db: AsyncSession,
     conversation_id: int,

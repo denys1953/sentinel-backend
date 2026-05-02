@@ -22,6 +22,7 @@ class UserRead(UserBase):
     salt: Optional[str] = None
     fingerprint: Optional[str] = None
     is_active: bool
+    is_2fa_enabled: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -33,10 +34,16 @@ class UserPublic(UserBase):
     avatar_url: Optional[str] = None 
     public_key: Optional[str] = None
     fingerprint: Optional[str] = None
+    is_2fa_enabled: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
-    access_token: str
+    access_token: Optional[str] = None
     token_type: str = "bearer"
+    requires_2fa: bool = False
+    temp_token: Optional[str] = None
+    setup_required: bool = False
+    qr_code: Optional[str] = None
+    secret: Optional[str] = None

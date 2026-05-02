@@ -2,7 +2,7 @@ from datetime import datetime
 
 from src.core.database import Base
 
-from sqlalchemy import Boolean, DateTime, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Integer, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -25,6 +25,10 @@ class User(Base):
     fingerprint: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # 2FA
+    totp_secret: Mapped[str] = mapped_column(String, nullable=True)
+    is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text('false'))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
