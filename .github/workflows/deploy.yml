@@ -3,6 +3,7 @@ name: Deploy Backend
 on:
   push:
     branches: [ main ]
+
 jobs:
   deploy:
     runs-on: self-hosted
@@ -10,14 +11,12 @@ jobs:
       - name: Update code and rebuild
         run: |
           cd /home/ubuntu/sentinel-app/sentinel-backend
-          git fetch origin main
-          git reset --hard origin/main
+          git pull origin main          
+          cd ..
+
+          docker compose up -d --build redis postgres fastapi
           
-          docker compose up -d redis postgres
-          
-          docker compose run --rm fastapi uv run alembic upgrade head
-          
-          docker compose up -d --build fastapi
+          docker compose exec -T fastapi uv run alembic upgrade head
           
       - name: Cleanup
         run: docker image prune -f
